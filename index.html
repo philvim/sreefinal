@@ -1,144 +1,93 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>For My Queen</title>
-<style>
-body { margin:0; overflow:hidden; background:black; font-family:sans-serif; }
-canvas { display:block; }
-
-#enterScreen{
-  position:absolute;
-  inset:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:black;
-  z-index:10;
-}
-
-#enterBtn{
-  padding:16px 40px;
-  font-size:18px;
-  border:none;
-  border-radius:40px;
-  background:#ff4f81;
-  color:white;
-  cursor:pointer;
-}
-
-#question{
-  position:absolute;
-  top:15%;
-  width:100%;
-  text-align:center;
-  font-size:42px;
-  color:#ffc5db;
-  display:none;
-  z-index:4;
-}
-
-#ui{
-  position:absolute;
-  bottom:60px;
-  width:100%;
-  text-align:center;
-  display:none;
-  z-index:5;
-}
-
-button.choice{
-  padding:14px 30px;
-  margin:0 20px;
-  font-size:16px;
-  border:none;
-  border-radius:30px;
-  cursor:pointer;
-  transition:0.3s;
-}
-
-#yes{ background:#ff4f81; color:white; }
-#yes:hover{ transform:scale(1.08); }
-
-#no{ background:#333; color:white; }
-
-#final{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  width:100%;
-  text-align:center;
-  font-size:48px;
-  color:#ffd27f;
-  display:none;
-  z-index:6;
-}
-</style>
-</head>
-<body>
-
-<div id="enterScreen">
-  <button id="enterBtn">Enter the Moment</button>
-</div>
-
-<div id="question">Will You Be My Girlfriend?</div>
-
-<div id="ui">
-  <button id="yes" class="choice">Yes</button>
-  <button id="no" class="choice">No</button>
-</div>
-
-<div id="final">My Queen Sree ❤️</div>
-
-<audio id="music" loop>
-  <source src="https://cdn.pixabay.com/download/audio/2022/10/25/audio_9f3d6d3f60.mp3" type="audio/mpeg">
-</audio>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-
 <script>
 window.addEventListener("DOMContentLoaded", () => {
 
+/* ===== Renderer ===== */
 const renderer = new THREE.WebGLRenderer({ antialias:true })
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.1
+renderer.toneMappingExposure = 1.15
 document.body.appendChild(renderer.domElement)
 
+/* ===== Scene ===== */
 const scene = new THREE.Scene()
 
-const camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,2000)
+const camera = new THREE.PerspectiveCamera(
+45,
+window.innerWidth/window.innerHeight,
+0.1,
+2000
+)
 camera.position.set(0,0,160)
 
+/* ===== Lighting ===== */
 scene.add(new THREE.AmbientLight(0xffffff,0.4))
 
 const pinkLight = new THREE.PointLight(0xff4f81,3,1000)
 pinkLight.position.set(0,60,80)
 scene.add(pinkLight)
 
-/* Starfield */
+/* ===== Starfield ===== */
 const starGeo = new THREE.BufferGeometry()
-const starCount = 2500
+const starCount = 3000
 const starPositions = new Float32Array(starCount*3)
 
 for(let i=0;i<starCount*3;i++){
-  starPositions[i] = (Math.random()-0.5)*800
+  starPositions[i] = (Math.random()-0.5)*900
 }
 
 starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions,3))
 
 const starMat = new THREE.PointsMaterial({
   color:0xffffff,
-  size:1,
+  size:1.2,
   transparent:true,
-  opacity:0.6
+  opacity:0.7
 })
 
 const stars = new THREE.Points(starGeo,starMat)
 scene.add(stars)
 
-/* Heart */
+/* ===== Sparkle Particles (NEW) ===== */
+const sparkleGeo = new THREE.BufferGeometry()
+const sparkleCount = 800
+const sparklePositions = new Float32Array(sparkleCount*3)
+
+for(let i=0;i<sparkleCount;i++){
+  const angle = Math.random() * Math.PI * 2
+  const radius = 40 + Math.random()*20
+
+  sparklePositions[i*3] = Math.cos(angle) * radius
+  sparklePositions[i*3+1] = Math.sin(angle) * radius
+  sparklePositions[i*3+2] = (Math.random()-0.5)*30
+}
+
+sparkleGeo.setAttribute("position", new THREE.BufferAttribute(sparklePositions,3))
+
+const sparkleMat = new THREE.PointsMaterial({
+  color:0xffb6d9,
+  size:2,
+  transparent:true,
+  opacity:0.9
+})
+
+const sparkles = new THREE.Points(sparkleGeo,sparkleMat)
+scene.add(sparkles)
+
+/* ===== Halo Ring (Soft Glow) ===== */
+const haloGeo = new THREE.RingGeometry(45,55,64)
+const haloMat = new THREE.MeshBasicMaterial({
+  color:0xff4f81,
+  transparent:true,
+  opacity:0.2,
+  side:THREE.DoubleSide
+})
+
+const halo = new THREE.Mesh(haloGeo,haloMat)
+halo.rotation.x = Math.PI/2
+scene.add(halo)
+
+/* ===== Heart ===== */
 const heartShape = new THREE.Shape()
 heartShape.moveTo(0,0)
 heartShape.bezierCurveTo(0,8,-12,18,-22,6)
@@ -160,13 +109,14 @@ const heart = new THREE.Mesh(
 heartGeo,
 new THREE.MeshPhysicalMaterial({
 color:0xff2e88,
-metalness:0.5,
-roughness:0.2,
+metalness:0.6,
+roughness:0.15,
 clearcoat:1
 })
 )
 scene.add(heart)
 
+/* ===== Animation ===== */
 const clock = new THREE.Clock()
 let introProgress = 0
 
@@ -183,13 +133,19 @@ heart.rotation.y += delta * 0.8
 heart.rotation.x = Math.sin(elapsed*0.6)*0.05
 heart.scale.setScalar(1 + Math.sin(elapsed*1.5)*0.05)
 
-stars.rotation.y += delta * 0.05
+stars.rotation.y += delta * 0.03
+
+sparkles.rotation.y += delta * 0.4
+sparkles.material.opacity = 0.6 + Math.sin(elapsed*3)*0.3
+
+halo.scale.setScalar(1 + Math.sin(elapsed*2)*0.05)
+halo.material.opacity = 0.15 + Math.sin(elapsed*2)*0.05
 
 renderer.render(scene,camera)
 }
 animate()
 
-/* Music Fade */
+/* ===== Music ===== */
 const music = document.getElementById("music")
 music.volume = 0
 
@@ -205,7 +161,7 @@ function fadeInAudio(){
   },200)
 }
 
-/* UI Logic */
+/* ===== UI ===== */
 document.getElementById("enterBtn").addEventListener("click",()=>{
   music.play().then(()=>{ fadeInAudio() }).catch(()=>{})
   document.getElementById("enterScreen").style.display="none"
@@ -235,5 +191,3 @@ renderer.setSize(window.innerWidth,window.innerHeight)
 
 })
 </script>
-</body>
-</html>
