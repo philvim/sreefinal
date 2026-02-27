@@ -27,6 +27,17 @@ canvas { display:block; }
   cursor:pointer;
 }
 
+#question{
+  position:absolute;
+  top:15%;
+  width:100%;
+  text-align:center;
+  font-size:42px;
+  color:#ffc5db;
+  display:none;
+  z-index:4;
+}
+
 #ui{
   position:absolute;
   bottom:60px;
@@ -70,6 +81,8 @@ button.choice{
   <button id="enterBtn">Enter the Moment</button>
 </div>
 
+<div id="question">Will You Be My Girlfriend?</div>
+
 <div id="ui">
   <button id="yes" class="choice">Yes</button>
   <button id="no" class="choice">No</button>
@@ -82,8 +95,6 @@ button.choice{
 </audio>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/FontLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/geometries/TextGeometry.js"></script>
 
 <script>
 window.addEventListener("DOMContentLoaded", () => {
@@ -106,8 +117,9 @@ const pinkLight = new THREE.PointLight(0xff4f81,3,1000)
 pinkLight.position.set(0,60,80)
 scene.add(pinkLight)
 
+/* Starfield */
 const starGeo = new THREE.BufferGeometry()
-const starCount = 3000
+const starCount = 2500
 const starPositions = new Float32Array(starCount*3)
 
 for(let i=0;i<starCount*3;i++){
@@ -126,6 +138,7 @@ const starMat = new THREE.PointsMaterial({
 const stars = new THREE.Points(starGeo,starMat)
 scene.add(stars)
 
+/* Heart */
 const heartShape = new THREE.Shape()
 heartShape.moveTo(0,0)
 heartShape.bezierCurveTo(0,8,-12,18,-22,6)
@@ -154,33 +167,6 @@ clearcoat:1
 )
 scene.add(heart)
 
-let textMesh
-
-new THREE.FontLoader().load(
-"https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
-font=>{
-const geo = new THREE.TextGeometry(
-"Will You Be My Girlfriend?",
-{
-font:font,
-size:5,
-height:2,
-bevelEnabled:true
-}
-)
-geo.center()
-
-textMesh = new THREE.Mesh(
-geo,
-new THREE.MeshStandardMaterial({ color:0xffc5db })
-)
-textMesh.position.set(0,80,0)
-scene.add(textMesh)
-
-document.getElementById("ui").style.display="block"
-}
-)
-
 const clock = new THREE.Clock()
 let introProgress = 0
 
@@ -199,14 +185,11 @@ heart.scale.setScalar(1 + Math.sin(elapsed*1.5)*0.05)
 
 stars.rotation.y += delta * 0.05
 
-if(textMesh){
-textMesh.position.y = 80 + Math.sin(elapsed)*3
-}
-
 renderer.render(scene,camera)
 }
 animate()
 
+/* Music Fade */
 const music = document.getElementById("music")
 music.volume = 0
 
@@ -222,13 +205,17 @@ function fadeInAudio(){
   },200)
 }
 
+/* UI Logic */
 document.getElementById("enterBtn").addEventListener("click",()=>{
   music.play().then(()=>{ fadeInAudio() }).catch(()=>{})
   document.getElementById("enterScreen").style.display="none"
+  document.getElementById("question").style.display="block"
+  document.getElementById("ui").style.display="block"
 })
 
 document.getElementById("yes").onclick = ()=>{
 document.getElementById("ui").style.display="none"
+document.getElementById("question").style.display="none"
 document.getElementById("final").style.display="block"
 }
 
