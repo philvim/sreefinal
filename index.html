@@ -6,77 +6,57 @@
 
 <style>
 body { margin:0; overflow:hidden; background:black; font-family:sans-serif; }
-
-canvas {
-  position:fixed;
-  top:0;
-  left:0;
-  z-index:1;
-}
+canvas { position:fixed; top:0; left:0; z-index:1; }
 
 #enterScreen{
-  position:absolute;
-  inset:0;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:black;
-  z-index:20;
+  position:absolute; inset:0;
+  display:flex; justify-content:center; align-items:center;
+  background:black; z-index:20;
 }
 
 #enterBtn{
-  padding:18px 48px;
-  font-size:20px;
-  border:none;
-  border-radius:50px;
-  background:#ff2e88;
-  color:white;
-  cursor:pointer;
+  padding:18px 48px; font-size:20px;
+  border:none; border-radius:50px;
+  background:#ff2e88; color:white; cursor:pointer;
 }
 
 #question{
-  position:absolute;
-  top:15%;
-  width:100%;
-  text-align:center;
-  font-size:48px;
-  color:#ffc5db;
-  display:none;
-  z-index:15;
+  position:absolute; top:15%; width:100%;
+  text-align:center; font-size:48px;
+  color:#ffc5db; display:none; z-index:15;
 }
 
 #ui{
-  position:absolute;
-  bottom:70px;
-  width:100%;
-  text-align:center;
-  display:none;
-  z-index:15;
+  position:absolute; bottom:70px; width:100%;
+  text-align:center; display:none; z-index:15;
 }
 
 button.choice{
-  padding:16px 36px;
-  margin:0 25px;
-  font-size:18px;
-  border:none;
-  border-radius:40px;
-  cursor:pointer;
+  padding:16px 36px; margin:0 25px;
+  font-size:18px; border:none;
+  border-radius:40px; cursor:pointer;
 }
 
 #yes{ background:#ff2e88; color:white; }
 #no{ background:#333; color:white; }
 
 #final{
-  position:absolute;
-  top:50%;
+  position:absolute; top:50%;
   transform:translateY(-50%);
-  width:100%;
-  text-align:center;
-  font-size:56px;
-  color:#ffd27f;
-  display:none;
-  z-index:25;
+  width:100%; text-align:center;
+  font-size:52px; color:#ffd6e8;
+  display:none; z-index:25;
 }
+
+#final .line{
+  opacity:0; transform:translateY(20px);
+  transition:all 1.5s ease;
+  margin:10px 0;
+}
+
+#final.show .line:nth-child(1){ opacity:1; transform:translateY(0); transition-delay:0.5s; }
+#final.show .line:nth-child(2){ opacity:1; transform:translateY(0); transition-delay:1.5s; }
+#final.show .line:nth-child(3){ opacity:1; transform:translateY(0); transition-delay:2.5s; }
 </style>
 </head>
 <body>
@@ -92,192 +72,150 @@ button.choice{
   <button id="no" class="choice">No</button>
 </div>
 
-<div id="final">My Queen Sree ❤️</div>
+<div id="final">
+  <div class="line">My Queen,</div>
+  <div class="line">My Veronica,</div>
+  <div class="line">My Sree — My Heart.</div>
+</div>
 
 <audio id="music" loop preload="auto">
   <source src="https://cdn.pixabay.com/download/audio/2022/10/25/audio_9f3d6d3f60.mp3" type="audio/mpeg">
 </audio>
 
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
 <script>
 window.addEventListener("DOMContentLoaded", () => {
 
-if(typeof THREE === "undefined"){
+if (!window.THREE) {
   alert("Three.js failed to load.");
   return;
 }
 
-/* ===== Renderer ===== */
-const renderer = new THREE.WebGLRenderer({ antialias:true })
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
-renderer.physicallyCorrectLights = true
-renderer.outputColorSpace = THREE.SRGBColorSpace
-renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1.4
-renderer.domElement.style.pointerEvents = "none"
-document.body.appendChild(renderer.domElement)
+/* DOM SAFE REFERENCES */
+const enterScreen = document.getElementById("enterScreen");
+const enterBtn = document.getElementById("enterBtn");
+const question = document.getElementById("question");
+const ui = document.getElementById("ui");
+const yesBtn = document.getElementById("yes");
+const noBtn = document.getElementById("no");
+const finalText = document.getElementById("final");
+const music = document.getElementById("music");
 
-/* ===== Scene ===== */
-const scene = new THREE.Scene()
+/* RENDERER */
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.5;
+document.body.appendChild(renderer.domElement);
 
-const camera = new THREE.PerspectiveCamera(
-50,
-window.innerWidth/window.innerHeight,
-0.1,
-3000
-)
-camera.position.set(0,0,220)
+/* SCENE */
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 4000);
+camera.position.set(0,0,250);
 
-/* ===== Cinematic Lighting ===== */
-scene.add(new THREE.AmbientLight(0xffffff,0.35))
+/* COMPOSER */
+let composer = new THREE.EffectComposer(renderer);
+composer.addPass(new THREE.RenderPass(scene, camera));
+const bloomPass = new THREE.UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  1.6, 0.4, 0.85
+);
+composer.addPass(bloomPass);
 
-const keyLight = new THREE.PointLight(0xff4f81,4,2000)
-keyLight.position.set(0,100,160)
-scene.add(keyLight)
+/* LIGHTS */
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+const pinkLight = new THREE.PointLight(0xff2e88, 5, 3000);
+pinkLight.position.set(0,150,200);
+scene.add(pinkLight);
 
-const rimLight = new THREE.PointLight(0xffffff,2,1500)
-rimLight.position.set(0,-120,-180)
-scene.add(rimLight)
-
-const topLight = new THREE.DirectionalLight(0xffffff,1.8)
-topLight.position.set(0,200,0)
-scene.add(topLight)
-
-/* ===== Deep Space Stars ===== */
-const starGeo = new THREE.BufferGeometry()
-const starCount = 8000
-const starPos = new Float32Array(starCount*3)
-
-for(let i=0;i<starCount*3;i++){
-  starPos[i] = (Math.random()-0.5)*2000
-}
-
-starGeo.setAttribute("position", new THREE.BufferAttribute(starPos,3))
-
-const starMat = new THREE.PointsMaterial({
-  color:0xffffff,
-  size:1.5,
-  transparent:true,
-  opacity:0.9
-})
-
-const stars = new THREE.Points(starGeo,starMat)
-scene.add(stars)
-
-/* ===== Sparkle Orbit ===== */
-const sparkleGeo = new THREE.BufferGeometry()
-const sparkleCount = 2000
-const sparklePos = new Float32Array(sparkleCount*3)
-
-for(let i=0;i<sparkleCount;i++){
-  const angle = Math.random()*Math.PI*2
-  const radius = 80 + Math.random()*30
-  sparklePos[i*3] = Math.cos(angle)*radius
-  sparklePos[i*3+1] = Math.sin(angle)*radius
-  sparklePos[i*3+2] = (Math.random()-0.5)*60
-}
-
-sparkleGeo.setAttribute("position", new THREE.BufferAttribute(sparklePos,3))
-
-const sparkleMat = new THREE.PointsMaterial({
-  color:0xffb6d9,
-  size:3,
-  transparent:true,
-  opacity:0.9
-})
-
-const sparkles = new THREE.Points(sparkleGeo,sparkleMat)
-scene.add(sparkles)
-
-/* ===== Ultra Detailed Heart ===== */
-const heartShape = new THREE.Shape()
-heartShape.moveTo(0,0)
-heartShape.bezierCurveTo(0,15,-22,35,-40,12)
-heartShape.bezierCurveTo(-55,-10,-18,-40,0,-60)
-heartShape.bezierCurveTo(18,-40,55,-10,40,12)
-heartShape.bezierCurveTo(22,35,0,15,0,0)
+/* HEART */
+const heartShape = new THREE.Shape();
+heartShape.moveTo(0,0);
+heartShape.bezierCurveTo(0,20,-30,50,-55,18);
+heartShape.bezierCurveTo(-70,-20,-25,-60,0,-90);
+heartShape.bezierCurveTo(25,-60,70,-20,55,18);
+heartShape.bezierCurveTo(30,50,0,20,0,0);
 
 const heartGeo = new THREE.ExtrudeGeometry(heartShape,{
-  depth:20,
+  depth:30,
   bevelEnabled:true,
-  bevelSegments:40,
-  bevelSize:6,
-  bevelThickness:6,
-  curveSegments:160
-})
-heartGeo.center()
+  bevelSegments:50,
+  bevelSize:8,
+  bevelThickness:8,
+  curveSegments:200
+});
+heartGeo.center();
 
-const heartMaterial = new THREE.MeshPhysicalMaterial({
+const heartMat = new THREE.MeshPhysicalMaterial({
   color:0xff2e88,
-  metalness:0.95,
+  metalness:1,
   roughness:0.05,
   clearcoat:1,
-  clearcoatRoughness:0.02,
-  reflectivity:1,
-  emissive:0x330015,
-  emissiveIntensity:0.8
-})
+  clearcoatRoughness:0.01,
+  emissive:0x550022,
+  emissiveIntensity:1.2
+});
 
-const heart = new THREE.Mesh(heartGeo, heartMaterial)
-scene.add(heart)
+const heart = new THREE.Mesh(heartGeo, heartMat);
+scene.add(heart);
 
-/* ===== Animation ===== */
-const clock = new THREE.Clock()
+/* ANIMATION */
+const clock = new THREE.Clock();
+let endingMode = false;
 
 function animate(){
-requestAnimationFrame(animate)
+  requestAnimationFrame(animate);
+  const delta = clock.getDelta();
+  const t = clock.getElapsedTime();
 
-const delta = clock.getDelta()
-const t = clock.getElapsedTime()
+  if(!endingMode){
+    heart.rotation.y += delta * 1.5;
+    heart.scale.setScalar(1 + Math.sin(t*2) * 0.1);
+  } else {
+    heart.rotation.y += delta * 0.4;
+    heart.material.emissiveIntensity = Math.min(heart.material.emissiveIntensity + delta, 3);
+    camera.position.z += (150 - camera.position.z) * 0.02;
+  }
 
-heart.rotation.y += delta*1.2
-heart.rotation.x = Math.sin(t*0.6)*0.1
-heart.scale.setScalar(1 + Math.sin(t*2)*0.08)
-
-stars.rotation.y += delta*0.05
-sparkles.rotation.y += delta*1
-sparkles.material.opacity = 0.7 + Math.sin(t*4)*0.3
-
-renderer.render(scene,camera)
+  composer.render();
 }
-animate()
+animate();
 
-/* ===== Audio ===== */
-const music = document.getElementById("music")
-music.volume = 0.85
+/* UI */
+enterBtn.onclick = () => {
+  music.play().catch(()=>{});
+  enterScreen.style.display = "none";
+  question.style.display = "block";
+  ui.style.display = "block";
+};
 
-/* ===== UI ===== */
-const enterBtn = document.getElementById("enterBtn")
+yesBtn.onclick = () => {
+  ui.style.display = "none";
+  question.style.display = "none";
+  endingMode = true;
+  finalText.style.display = "block";
+  setTimeout(()=> finalText.classList.add("show"), 800);
+};
 
-enterBtn.addEventListener("click",()=>{
-  music.play().catch(()=>{})
-  document.getElementById("enterScreen").style.display="none"
-  document.getElementById("question").style.display="block"
-  document.getElementById("ui").style.display="block"
-})
-
-document.getElementById("yes").onclick = ()=>{
-  document.getElementById("ui").style.display="none"
-  document.getElementById("question").style.display="none"
-  document.getElementById("final").style.display="block"
-}
-
-document.getElementById("no").onmouseover = ()=>{
-  const btn = document.getElementById("no")
-  btn.style.position="absolute"
-  btn.style.left = Math.random()*(window.innerWidth-200)+"px"
-  btn.style.top = Math.random()*(window.innerHeight-200)+"px"
-}
+noBtn.onmouseover = () => {
+  noBtn.style.position = "absolute";
+  noBtn.style.left = Math.random()*(window.innerWidth-200)+"px";
+  noBtn.style.top = Math.random()*(window.innerHeight-200)+"px";
+};
 
 window.addEventListener("resize",()=>{
-  camera.aspect = window.innerWidth/window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth,window.innerHeight)
-})
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  composer.setSize(window.innerWidth,window.innerHeight);
+});
 
-})
+});
 </script>
 </body>
 </html>
