@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>For You ❤️</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>❤️</text></svg>">
+<style>
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f1020, #1a1c3a);
+  font-family: 'Segoe UI', sans-serif;
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 600px;
+  padding: 40px;
+}
+
+h1 {
+  font-size: 2.8rem;
+  font-weight: 300;
+  margin-bottom: 30px;
+  letter-spacing: 1px;
+}
+
+.heart {
+  font-size: 5rem;
+  animation: pulse 1.6s infinite ease-in-out;
+}
+
+button {
+  margin-top: 30px;
+  padding: 12px 28px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 30px;
+  background: #ff4f81;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+button:hover {
+  background: #ff2e6e;
+  transform: scale(1.05);
+}
+
+.final {
+  display: none;
+  font-size: 2.5rem;
+  margin-top: 20px;
+  font-weight: 300;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="heart">❤️</div>
+  <h1>Will You Be My Girlfriend?</h1>
+  <button onclick="sayYes()">Yes</button>
+  <div class="final" id="finalMessage">My Queen Sree ❤️</div>
+</div>
+
+<script>
+function sayYes() {
+  document.querySelector("h1").style.display = "none";
+  document.querySelector("button").style.display = "none";
+  document.getElementById("finalMessage").style.display = "block";
+}
+</script>
+
+</body>
+</html>
