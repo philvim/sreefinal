@@ -2,54 +2,38 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Golden Proposal</title>
-
+<title>Shining Golden Heart</title>
 <style>
 body{
   margin:0;
   overflow:hidden;
-  background:black;
+  background:#000;
   font-family:sans-serif;
 }
 
-/* Canvas */
 canvas{
   position:fixed;
   top:0;
   left:0;
   width:100%;
   height:100%;
-  z-index:0;
 }
 
-/* Proposal Text */
-#question{
+#text{
   position:fixed;
   top:30%;
   width:100%;
   text-align:center;
   font-size:48px;
   color:#FFD700;
-  text-shadow:0 0 25px rgba(255,215,0,0.9);
-  z-index:2;
-}
-
-#final{
-  position:fixed;
-  top:55%;
-  width:100%;
-  text-align:center;
-  font-size:40px;
-  color:#fff4c2;
-  text-shadow:0 0 25px rgba(255,215,0,0.8);
+  text-shadow:0 0 40px rgba(255,215,0,0.9);
   z-index:2;
 }
 </style>
 </head>
 <body>
 
-<div id="question">Will You Be My Girlfriend?</div>
-<div id="final">My Queen, My Veronica, My Sree 💛</div>
+<div id="text">Will You Be My Girlfriend?</div>
 
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
@@ -60,7 +44,7 @@ const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 2.0;
+renderer.toneMappingExposure = 2.2;
 document.body.appendChild(renderer.domElement);
 
 /* Scene */
@@ -71,98 +55,101 @@ const camera = new THREE.PerspectiveCamera(
 50,
 window.innerWidth/window.innerHeight,
 0.1,
-4000
+2000
 );
-camera.position.set(0,0,300);
+camera.position.set(0,0,280);
 
-/* Strong Lights */
-scene.add(new THREE.AmbientLight(0xffffff,0.6));
+/* Lighting Setup (High Shine Setup) */
+scene.add(new THREE.AmbientLight(0xffffff,0.7));
 
-const goldLight = new THREE.PointLight(0xffd700,8,4000);
-goldLight.position.set(200,200,300);
-scene.add(goldLight);
+const keyLight = new THREE.PointLight(0xffd700,12,3000);
+keyLight.position.set(200,200,200);
+scene.add(keyLight);
 
-const rimLight = new THREE.PointLight(0xffffff,6,4000);
-rimLight.position.set(-200,-150,-300);
-scene.add(rimLight);
+const fillLight = new THREE.PointLight(0xffffff,8,3000);
+fillLight.position.set(-200,-150,-200);
+scene.add(fillLight);
 
-/* Stars */
-function createStars(count,size,spread){
-  const geo=new THREE.BufferGeometry();
-  const pos=new Float32Array(count*3);
-  for(let i=0;i<count*3;i++){
-    pos[i]=(Math.random()-0.5)*spread;
-  }
-  geo.setAttribute("position",new THREE.BufferAttribute(pos,3));
-  const mat=new THREE.PointsMaterial({
-    color:0xffffff,
-    size:size,
-    transparent:true,
-    opacity:0.9
-  });
-  return new THREE.Points(geo,mat);
+/* Star Background */
+const starGeo = new THREE.BufferGeometry();
+const starCount = 4000;
+const starPos = new Float32Array(starCount*3);
+
+for(let i=0;i<starCount*3;i++){
+  starPos[i] = (Math.random()-0.5)*5000;
 }
 
-scene.add(createStars(5000,1.5,6000));
+starGeo.setAttribute("position",new THREE.BufferAttribute(starPos,3));
+
+const starMat = new THREE.PointsMaterial({
+  color:0xffffff,
+  size:1.4,
+  transparent:true,
+  opacity:0.8
+});
+
+const stars = new THREE.Points(starGeo,starMat);
+scene.add(stars);
 
 /* Heart Shape */
-const heartShape=new THREE.Shape();
-heartShape.moveTo(0,0);
-heartShape.bezierCurveTo(0,30,-50,80,-95,30);
-heartShape.bezierCurveTo(-120,-30,-40,-110,0,-150);
-heartShape.bezierCurveTo(40,-110,120,-30,95,30);
-heartShape.bezierCurveTo(50,80,0,30,0,0);
+const shape = new THREE.Shape();
+shape.moveTo(0,0);
+shape.bezierCurveTo(0,30,-50,80,-95,30);
+shape.bezierCurveTo(-120,-30,-40,-110,0,-150);
+shape.bezierCurveTo(40,-110,120,-30,95,30);
+shape.bezierCurveTo(50,80,0,30,0,0);
 
-const heartGeo=new THREE.ExtrudeGeometry(heartShape,{
+const geometry = new THREE.ExtrudeGeometry(shape,{
   depth:40,
   bevelEnabled:true,
-  bevelSegments:10,
-  bevelSize:12,
-  bevelThickness:12,
-  curveSegments:60
+  bevelSegments:20,
+  bevelSize:10,
+  bevelThickness:10,
+  curveSegments:120
 });
-heartGeo.center();
+geometry.center();
 
-/* GLOWING GOLD MATERIAL */
-const heartMat=new THREE.MeshStandardMaterial({
+/* Premium Gold Material */
+const material = new THREE.MeshPhysicalMaterial({
   color:0xffd700,
-  metalness:0.8,
-  roughness:0.2,
-  emissive:0x553300,
-  emissiveIntensity:1
+  metalness:1,
+  roughness:0.05,
+  clearcoat:1,
+  clearcoatRoughness:0.02,
+  emissive:0x332200,
+  emissiveIntensity:0.8
 });
 
-const heart=new THREE.Mesh(heartGeo,heartMat);
+const heart = new THREE.Mesh(geometry,material);
 scene.add(heart);
 
 /* Animation */
-const clock=new THREE.Clock();
+const clock = new THREE.Clock();
 
 function animate(){
-requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
 
-const delta=clock.getDelta();
-const t=clock.getElapsedTime();
+  const t = clock.getElapsedTime();
 
-/* Rotation */
-heart.rotation.y+=delta*1.2;
-heart.rotation.x=Math.sin(t*0.6)*0.08;
+  heart.rotation.y += 0.01;
+  heart.rotation.x = Math.sin(t*0.5)*0.08;
 
-/* Glow Pulse */
-heart.material.emissiveIntensity = 1 + Math.sin(t*3)*0.5;
+  /* Shimmer Pulse */
+  heart.material.emissiveIntensity = 0.8 + Math.sin(t*3)*0.6;
 
-renderer.render(scene,camera);
+  stars.rotation.y += 0.0005;
+
+  renderer.render(scene,camera);
 }
 animate();
 
 /* Resize */
 window.addEventListener("resize",()=>{
-  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
 });
 
 </script>
-
 </body>
 </html>
