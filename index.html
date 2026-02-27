@@ -2,101 +2,72 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Golden Heart</title>
-
+<title>Ultra Cinematic Golden Heart</title>
 <style>
-body { margin:0; overflow:hidden; background:black; font-family:sans-serif; }
-canvas { position:fixed; top:0; left:0; }
-
-#enterScreen{
-  position:absolute; inset:0;
-  display:flex; justify-content:center; align-items:center;
-  background:black; z-index:10;
-}
-
-#enterBtn{
-  padding:18px 48px;
-  font-size:20px;
-  border:none;
-  border-radius:50px;
-  background:#d4af37;
-  color:black;
-  cursor:pointer;
-}
-
-#final{
-  position:absolute;
-  top:50%;
-  transform:translateY(-50%);
-  width:100%;
-  text-align:center;
-  font-size:48px;
-  color:#ffd700;
-  display:none;
-  z-index:15;
-}
+body { margin:0; overflow:hidden; background:black; }
+canvas { display:block; }
 </style>
 </head>
 <body>
 
-<div id="enterScreen">
-  <button id="enterBtn">Enter</button>
-</div>
+<script type="module">
 
-<div id="final">
-  My Queen,<br>
-  My Veronica,<br>
-  My Sree — My Heart.
-</div>
-
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-
-<script>
-window.addEventListener("DOMContentLoaded", () => {
-
-if(!window.THREE){
-  alert("Three.js failed to load.");
-  return;
-}
-
-const enterScreen = document.getElementById("enterScreen");
-const enterBtn = document.getElementById("enterBtn");
-const finalText = document.getElementById("final");
+import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
+import { RGBELoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js";
+import { EffectComposer } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
 /* Renderer */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.5;
+renderer.toneMappingExposure = 1.6;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.physicallyCorrectLights = true;
 document.body.appendChild(renderer.domElement);
 
 /* Scene */
 const scene = new THREE.Scene();
+
+/* Camera */
 const camera = new THREE.PerspectiveCamera(
 50,
 window.innerWidth/window.innerHeight,
 0.1,
 5000
 );
-camera.position.set(0,0,300);
+camera.position.set(0,0,350);
+
+/* Controls (smooth cinematic orbit) */
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.5;
+
+/* HDR Environment */
+new RGBELoader()
+  .setPath("https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/")
+  .load("royal_esplanade_1k.hdr", function(texture){
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = texture;
+    scene.background = texture;
+  });
 
 /* Lighting */
-scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
 
-const keyLight = new THREE.PointLight(0xffd700, 6, 4000);
-keyLight.position.set(0, 200, 300);
-scene.add(keyLight);
+const goldLight = new THREE.PointLight(0xffd700, 6, 4000);
+goldLight.position.set(200,200,200);
+scene.add(goldLight);
 
-const rimLight = new THREE.PointLight(0xffffff, 3, 3000);
-rimLight.position.set(0, -250, -350);
+const rimLight = new THREE.PointLight(0xffffff, 4, 3000);
+rimLight.position.set(-250,-200,-300);
 scene.add(rimLight);
 
-const fillLight = new THREE.PointLight(0xffc94d, 3, 3000);
-fillLight.position.set(200, 100, 200);
-scene.add(fillLight);
-
-/* Starfield */
+/* Galaxy Stars */
 function createStars(count,size,spread){
   const geo=new THREE.BufferGeometry();
   const pos=new Float32Array(count*3);
@@ -113,18 +84,20 @@ function createStars(count,size,spread){
   return new THREE.Points(geo,mat);
 }
 
-const stars=createStars(6000,1.5,5000);
-scene.add(stars);
+const starsFar=createStars(8000,1.2,6000);
+const starsNear=createStars(3000,2.2,2000);
+scene.add(starsFar);
+scene.add(starsNear);
 
-/* Golden Heart */
-const heartShape=new THREE.Shape();
+/* Golden Heart Geometry */
+const heartShape = new THREE.Shape();
 heartShape.moveTo(0,0);
 heartShape.bezierCurveTo(0,30,-50,80,-95,30);
 heartShape.bezierCurveTo(-120,-30,-40,-110,0,-160);
 heartShape.bezierCurveTo(40,-110,120,-30,95,30);
 heartShape.bezierCurveTo(50,80,0,30,0,0);
 
-const heartGeo=new THREE.ExtrudeGeometry(heartShape,{
+const heartGeo = new THREE.ExtrudeGeometry(heartShape,{
   depth:50,
   bevelEnabled:true,
   bevelSegments:80,
@@ -134,37 +107,36 @@ const heartGeo=new THREE.ExtrudeGeometry(heartShape,{
 });
 heartGeo.center();
 
-const heartMat=new THREE.MeshPhysicalMaterial({
+const heartMat = new THREE.MeshPhysicalMaterial({
   color:0xffd700,
   metalness:1,
   roughness:0.05,
   clearcoat:1,
   clearcoatRoughness:0.02,
-  emissive:0x443300,
-  emissiveIntensity:0.8
+  envMapIntensity:1.8
 });
 
-const heart=new THREE.Mesh(heartGeo,heartMat);
+const heart = new THREE.Mesh(heartGeo,heartMat);
 scene.add(heart);
 
 /* Sparkle Halo */
 const sparkleGeo=new THREE.BufferGeometry();
-const sparkleCount=3000;
+const sparkleCount=4000;
 const sparklePos=new Float32Array(sparkleCount*3);
 
 for(let i=0;i<sparkleCount;i++){
   const angle=Math.random()*Math.PI*2;
-  const radius=200+Math.random()*80;
+  const radius=220+Math.random()*100;
   sparklePos[i*3]=Math.cos(angle)*radius;
   sparklePos[i*3+1]=Math.sin(angle)*radius;
-  sparklePos[i*3+2]=(Math.random()-0.5)*200;
+  sparklePos[i*3+2]=(Math.random()-0.5)*300;
 }
 
 sparkleGeo.setAttribute("position",new THREE.BufferAttribute(sparklePos,3));
 
 const sparkleMat=new THREE.PointsMaterial({
   color:0xfff2a8,
-  size:5,
+  size:4,
   transparent:true,
   opacity:0.9
 });
@@ -172,40 +144,48 @@ const sparkleMat=new THREE.PointsMaterial({
 const sparkles=new THREE.Points(sparkleGeo,sparkleMat);
 scene.add(sparkles);
 
+/* Post Processing Bloom */
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(window.innerWidth, window.innerHeight),
+  1.4,
+  0.4,
+  0.85
+);
+composer.addPass(bloomPass);
+
 /* Animation */
-const clock=new THREE.Clock();
+const clock = new THREE.Clock();
 
 function animate(){
 requestAnimationFrame(animate);
+
 const delta=clock.getDelta();
 const t=clock.getElapsedTime();
 
-heart.rotation.y+=delta*1.2;
-heart.rotation.x=Math.sin(t*0.6)*0.1;
-heart.scale.setScalar(1+Math.sin(t*2.5)*0.12);
+heart.rotation.y += delta*1.2;
+heart.rotation.x = Math.sin(t*0.6)*0.1;
+heart.scale.setScalar(1 + Math.sin(t*2.5)*0.1);
 
-sparkles.rotation.y+=delta*0.5;
-sparkles.material.opacity=0.7+Math.sin(t*6)*0.3;
+sparkles.rotation.y += delta*0.4;
+starsFar.rotation.y += delta*0.02;
+starsNear.rotation.y += delta*0.05;
 
-stars.rotation.y+=delta*0.02;
-
-renderer.render(scene,camera);
+controls.update();
+composer.render();
 }
 animate();
 
-/* Enter Button */
-enterBtn.onclick=()=>{
-  enterScreen.style.display="none";
-  finalText.style.display="block";
-};
-
+/* Resize */
 window.addEventListener("resize",()=>{
-  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
+  composer.setSize(window.innerWidth,window.innerHeight);
 });
 
-});
 </script>
 </body>
 </html>
