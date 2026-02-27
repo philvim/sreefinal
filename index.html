@@ -67,7 +67,7 @@ button.choice{
 <body>
 
 <div id="enterScreen">
-  <button id="enterBtn">Enter the Universe</button>
+  <button id="enterBtn">Enter the Moment</button>
 </div>
 
 <div id="ui">
@@ -82,74 +82,49 @@ button.choice{
 </audio>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/FontLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/geometries/TextGeometry.js"></script>
 
 <script>
-
-/* ===== Renderer ===== */
+window.addEventListener("DOMContentLoaded", () => {
 
 const renderer = new THREE.WebGLRenderer({ antialias:true })
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
 renderer.toneMapping = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 1
+renderer.toneMappingExposure = 1.1
 document.body.appendChild(renderer.domElement)
-
-/* ===== Scene ===== */
 
 const scene = new THREE.Scene()
 
-const camera = new THREE.PerspectiveCamera(
-45,
-window.innerWidth/window.innerHeight,
-0.1,
-2000
-)
-camera.position.set(0,0,180)
+const camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,2000)
+camera.position.set(0,0,160)
 
-/* ===== Post Processing ===== */
+scene.add(new THREE.AmbientLight(0xffffff,0.4))
 
-const composer = new THREE.EffectComposer(renderer)
-composer.addPass(new THREE.RenderPass(scene,camera))
+const pinkLight = new THREE.PointLight(0xff4f81,3,1000)
+pinkLight.position.set(0,60,80)
+scene.add(pinkLight)
 
-const bloom = new THREE.UnrealBloomPass(
-new THREE.Vector2(window.innerWidth,window.innerHeight),
-0.5,
-0.3,
-0.3
-)
-composer.addPass(bloom)
+const starGeo = new THREE.BufferGeometry()
+const starCount = 3000
+const starPositions = new Float32Array(starCount*3)
 
-/* ===== Lighting ===== */
-
-scene.add(new THREE.AmbientLight(0xffffff,0.25))
-
-const light = new THREE.PointLight(0xff6fa5,2,1000)
-light.position.set(0,60,80)
-scene.add(light)
-
-/* ===== Starfield (Safe Fallback) ===== */
-
-const starGeo = new THREE.SphereGeometry(1000,48,48)
-const textureLoader = new THREE.TextureLoader()
-let starMat = new THREE.MeshBasicMaterial({ color:0x050510, side:THREE.BackSide })
-
-textureLoader.load(
-"https://threejsfundamentals.org/threejs/resources/images/starfield.jpg",
-texture=>{
-starMat.map = texture
-starMat.needsUpdate = true
+for(let i=0;i<starCount*3;i++){
+  starPositions[i] = (Math.random()-0.5)*800
 }
-)
 
-const starSphere = new THREE.Mesh(starGeo,starMat)
-scene.add(starSphere)
+starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions,3))
 
-/* ===== Heart ===== */
+const starMat = new THREE.PointsMaterial({
+  color:0xffffff,
+  size:1,
+  transparent:true,
+  opacity:0.6
+})
+
+const stars = new THREE.Points(starGeo,starMat)
+scene.add(stars)
 
 const heartShape = new THREE.Shape()
 heartShape.moveTo(0,0)
@@ -161,7 +136,7 @@ heartShape.bezierCurveTo(12,18,0,8,0,0)
 const heartGeo = new THREE.ExtrudeGeometry(heartShape,{
 depth:10,
 bevelEnabled:true,
-bevelSegments:20,
+bevelSegments:16,
 bevelSize:2,
 bevelThickness:2,
 curveSegments:60
@@ -179,9 +154,8 @@ clearcoat:1
 )
 scene.add(heart)
 
-/* ===== Text ===== */
-
 let textMesh
+
 new THREE.FontLoader().load(
 "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
 font=>{
@@ -207,8 +181,6 @@ document.getElementById("ui").style.display="block"
 }
 )
 
-/* ===== Animation ===== */
-
 const clock = new THREE.Clock()
 let introProgress = 0
 
@@ -218,31 +190,42 @@ requestAnimationFrame(animate)
 const delta = clock.getDelta()
 const elapsed = clock.getElapsedTime()
 
-if(introProgress < 1){
-introProgress += delta * 0.4
-camera.position.z = 180 - introProgress * 110
-}
+introProgress = Math.min(1, introProgress + delta * 0.5)
+camera.position.z = 160 - introProgress * 90
 
 heart.rotation.y += delta * 0.8
-heart.rotation.x = Math.sin(elapsed*0.5)*0.05
+heart.rotation.x = Math.sin(elapsed*0.6)*0.05
 heart.scale.setScalar(1 + Math.sin(elapsed*1.5)*0.05)
 
-starSphere.rotation.y += delta * 0.05
+stars.rotation.y += delta * 0.05
 
 if(textMesh){
 textMesh.position.y = 80 + Math.sin(elapsed)*3
 }
 
-composer.render()
+renderer.render(scene,camera)
 }
 animate()
 
-/* ===== UI ===== */
+const music = document.getElementById("music")
+music.volume = 0
 
-document.getElementById("enterBtn").onclick = ()=>{
-document.getElementById("music").play().catch(()=>{})
-document.getElementById("enterScreen").style.display="none"
+function fadeInAudio(){
+  let vol = 0
+  const fade = setInterval(()=>{
+    if(vol < 1){
+      vol += 0.05
+      music.volume = vol
+    } else {
+      clearInterval(fade)
+    }
+  },200)
 }
+
+document.getElementById("enterBtn").addEventListener("click",()=>{
+  music.play().then(()=>{ fadeInAudio() }).catch(()=>{})
+  document.getElementById("enterScreen").style.display="none"
+})
 
 document.getElementById("yes").onclick = ()=>{
 document.getElementById("ui").style.display="none"
@@ -257,13 +240,12 @@ btn.style.left = Math.random()*(window.innerWidth-padding)+"px"
 btn.style.top = Math.random()*(window.innerHeight-padding)+"px"
 }
 
-/* ===== Resize ===== */
-
 window.addEventListener("resize",()=>{
 camera.aspect = window.innerWidth/window.innerHeight
 camera.updateProjectionMatrix()
 renderer.setSize(window.innerWidth,window.innerHeight)
-composer.setSize(window.innerWidth,window.innerHeight)
+})
+
 })
 </script>
 </body>
