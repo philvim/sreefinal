@@ -2,136 +2,123 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>For My Love</title>
+<title>For You ❤️</title>
 <style>
-body { margin:0; overflow:hidden; background:#0e0f1a; }
+body { margin:0; overflow:hidden; background:#0c0f1d; font-family: sans-serif; }
 canvas { display:block; }
+#ui {
+  position:absolute;
+  bottom:50px;
+  width:100%;
+  text-align:center;
+  display:none;
+}
+button {
+  padding:12px 28px;
+  margin:0 20px;
+  font-size:16px;
+  border:none;
+  border-radius:30px;
+  cursor:pointer;
+  transition:0.3s;
+}
+#yes { background:#ff4f81; color:white; }
+#yes:hover { transform:scale(1.08); }
+#no { background:#555; color:white; }
+#final {
+  position:absolute;
+  top:50%;
+  width:100%;
+  text-align:center;
+  font-size:42px;
+  color:#ffd27f;
+  display:none;
+}
 </style>
 </head>
 <body>
 
+<div id="ui">
+  <button id="yes">Yes</button>
+  <button id="no">No</button>
+</div>
+
+<div id="final">My Queen Sree ❤️</div>
+
+<audio id="music" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2022/10/25/audio_9f3d6d3f60.mp3" type="audio/mpeg">
+</audio>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/geometries/TextGeometry.js"></script>
 
 <script>
-/* ========= SCENE ========= */
-
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0e0f1a);
+scene.background = new THREE.Color(0x0c0f1d);
 
-const camera = new THREE.PerspectiveCamera(
-  45,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  2000
-);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 2000);
+camera.position.z = 60;
 
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 document.body.appendChild(renderer.domElement);
 
-/* ========= LIGHTING ========= */
+scene.add(new THREE.AmbientLight(0xffffff,0.5));
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const light = new THREE.PointLight(0xff6fa5,1.5,1000);
+light.position.set(0,30,50);
+scene.add(light);
 
-const light1 = new THREE.DirectionalLight(0xff6f9c, 1);
-light1.position.set(5,10,10);
-scene.add(light1);
+/* ===== FLOWERS ===== */
 
-const light2 = new THREE.DirectionalLight(0xff2e88, 0.4);
-light2.position.set(-5,-10,-10);
-scene.add(light2);
+const flowers = [];
 
-/* ========= HEART SHAPE ========= */
+function createFlower() {
+  const group = new THREE.Group();
+  const petals = 6;
+  for (let i=0;i<petals;i++){
+    const geo = new THREE.ConeGeometry(1.2,5,8);
+    const mat = new THREE.MeshStandardMaterial({ color:0xff3d7f, roughness:0.4 });
+    const petal = new THREE.Mesh(geo,mat);
+    petal.position.y = 2.5;
+    petal.rotation.z = Math.PI/2;
+    petal.rotation.y = (i/petals)*Math.PI*2;
+    group.add(petal);
+  }
+  group.position.set(
+    (Math.random()-0.5)*100,
+    (Math.random()-0.5)*100,
+    (Math.random()-0.5)*100
+  );
+  group.scale.set(0.01,0.01,0.01);
+  scene.add(group);
+  flowers.push(group);
+}
 
-const heartShape = new THREE.Shape();
+for(let i=0;i<80;i++) createFlower();
 
-heartShape.moveTo(0,0);
-heartShape.bezierCurveTo(0,4,-6,8,-10,3);
-heartShape.bezierCurveTo(-15,-2,-5,-8,0,-12);
-heartShape.bezierCurveTo(5,-8,15,-2,10,3);
-heartShape.bezierCurveTo(6,8,0,4,0,0);
+/* ===== TEXT ===== */
 
-const heartGeo = new THREE.ExtrudeGeometry(heartShape,{
-  depth:5,
-  bevelEnabled:true,
-  bevelSegments:8,
-  bevelSize:0.8,
-  bevelThickness:0.8,
-  curveSegments:50
-});
-
-heartGeo.center();
-
-const heartMaterial = new THREE.MeshStandardMaterial({
-  color:0xff3d7f,
-  metalness:0.15,
-  roughness:0.35
-});
-
-const heart = new THREE.Mesh(heartGeo,heartMaterial);
-scene.add(heart);
-
-camera.position.z = 40;
-
-/* ========= TEXT ========= */
-
+let textMesh;
 const loader = new THREE.FontLoader();
 
-loader.load(
-  "https://threejs.org/examples/fonts/helvetiker_regular.typeface.json",
-  function(font){
+loader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", function(font){
+  const geo = new THREE.TextGeometry(
+    "Will You Be My Girlfriend?",
+    { font:font, size:3, height:1, bevelEnabled:true }
+  );
+  geo.center();
+  const mat = new THREE.MeshStandardMaterial({ color:0xffc5db, roughness:0.6 });
+  textMesh = new THREE.Mesh(geo,mat);
+  textMesh.position.set(0,0,0);
+  textMesh.visible=false;
+  scene.add(textMesh);
+});
 
-    const textGeo = new THREE.TextGeometry(
-      "Will You Be My Girlfriend?",
-      {
-        font: font,
-        size: 2,
-        height: 0.4,
-        curveSegments: 24
-      }
-    );
+/* ===== ANIMATION ===== */
 
-    textGeo.center();
-
-    const textMat = new THREE.MeshStandardMaterial({
-      color:0xffc5db,
-      roughness:0.6
-    });
-
-    const textMesh = new THREE.Mesh(textGeo,textMat);
-    textMesh.position.set(0,18,0);
-    scene.add(textMesh);
-
-    window.addEventListener("click",()=>{
-      textMesh.visible = false;
-
-      const finalGeo = new THREE.TextGeometry(
-        "My Queen Sree",
-        {
-          font: font,
-          size: 2.5,
-          height: 0.5
-        }
-      );
-
-      finalGeo.center();
-
-      const finalMat = new THREE.MeshStandardMaterial({
-        color:0xffd27f,
-        metalness:0.3,
-        roughness:0.4
-      });
-
-      const finalMesh = new THREE.Mesh(finalGeo,finalMat);
-      scene.add(finalMesh);
-    });
-
-  }
-);
-
-/* ========= ANIMATION ========= */
-
+let bloomPhase = 0;
 const clock = new THREE.Clock();
 
 function animate(){
@@ -139,18 +126,48 @@ function animate(){
 
   const t = clock.getElapsedTime();
 
-  heart.rotation.y += 0.005;
-  heart.rotation.x = Math.sin(t*0.3)*0.05;
+  flowers.forEach((f,i)=>{
+    if(f.scale.x < 1){
+      const s = f.scale.x + 0.02;
+      f.scale.set(s,s,s);
+      f.position.lerp(new THREE.Vector3(
+        (Math.random()-0.5)*30,
+        (Math.random()-0.5)*30,
+        (Math.random()-0.5)*30
+      ),0.01);
+    }
+    f.rotation.y += 0.01;
+  });
 
-  const pulse = 1 + Math.sin(t)*0.03;
-  heart.scale.set(pulse,pulse,pulse);
+  if(t>4 && textMesh){
+    textMesh.visible=true;
+    document.getElementById("ui").style.display="block";
+  }
+
+  const pulse = 1 + Math.sin(t*2)*0.05;
+  light.intensity = 1.5*pulse;
 
   renderer.render(scene,camera);
 }
 
 animate();
 
-/* ========= RESIZE ========= */
+/* ===== INTERACTION ===== */
+
+document.body.addEventListener("click",()=>{
+  document.getElementById("music").play();
+},{ once:true });
+
+document.getElementById("yes").onclick = ()=>{
+  document.getElementById("ui").style.display="none";
+  document.getElementById("final").style.display="block";
+};
+
+document.getElementById("no").onmouseover = ()=>{
+  document.getElementById("no").style.position="absolute";
+  document.getElementById("no").style.left=Math.random()*window.innerWidth+"px";
+  document.getElementById("no").style.top=Math.random()*window.innerHeight+"px";
+};
 
 window.addEventListener("resize",()=>{
   camera.aspect = window.innerWidth/window.innerHeight;
