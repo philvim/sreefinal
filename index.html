@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Ultra Cinematic Golden Heart</title>
+<title>Ultra Golden Heart</title>
 <style>
 body { margin:0; overflow:hidden; background:black; }
 canvas { display:block; }
@@ -10,23 +10,23 @@ canvas { display:block; }
 </head>
 <body>
 
-<script type="module">
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.160.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 
-import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-import { RGBELoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/RGBELoader.js";
-import { EffectComposer } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js";
-import { RenderPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js";
-import { UnrealBloomPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js";
-import { OrbitControls } from "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+<script>
+
+if(!window.THREE){
+  alert("Three.js failed to load.");
+}
 
 /* Renderer */
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.6;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.physicallyCorrectLights = true;
+renderer.toneMappingExposure = 1.7;
 document.body.appendChild(renderer.domElement);
 
 /* Scene */
@@ -41,33 +41,18 @@ window.innerWidth/window.innerHeight,
 );
 camera.position.set(0,0,350);
 
-/* Controls (smooth cinematic orbit) */
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.5;
-
-/* HDR Environment */
-new RGBELoader()
-  .setPath("https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/")
-  .load("royal_esplanade_1k.hdr", function(texture){
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.environment = texture;
-    scene.background = texture;
-  });
-
 /* Lighting */
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+scene.add(new THREE.AmbientLight(0xffffff,0.3));
 
-const goldLight = new THREE.PointLight(0xffd700, 6, 4000);
-goldLight.position.set(200,200,200);
+const goldLight = new THREE.PointLight(0xffd700,6,4000);
+goldLight.position.set(200,200,300);
 scene.add(goldLight);
 
-const rimLight = new THREE.PointLight(0xffffff, 4, 3000);
-rimLight.position.set(-250,-200,-300);
+const rimLight = new THREE.PointLight(0xffffff,4,3000);
+rimLight.position.set(-300,-200,-300);
 scene.add(rimLight);
 
-/* Galaxy Stars */
+/* Starfield */
 function createStars(count,size,spread){
   const geo=new THREE.BufferGeometry();
   const pos=new Float32Array(count*3);
@@ -84,20 +69,20 @@ function createStars(count,size,spread){
   return new THREE.Points(geo,mat);
 }
 
-const starsFar=createStars(8000,1.2,6000);
-const starsNear=createStars(3000,2.2,2000);
+const starsFar=createStars(9000,1.2,6000);
+const starsNear=createStars(4000,2.5,2500);
 scene.add(starsFar);
 scene.add(starsNear);
 
-/* Golden Heart Geometry */
-const heartShape = new THREE.Shape();
+/* Golden Heart */
+const heartShape=new THREE.Shape();
 heartShape.moveTo(0,0);
 heartShape.bezierCurveTo(0,30,-50,80,-95,30);
 heartShape.bezierCurveTo(-120,-30,-40,-110,0,-160);
 heartShape.bezierCurveTo(40,-110,120,-30,95,30);
 heartShape.bezierCurveTo(50,80,0,30,0,0);
 
-const heartGeo = new THREE.ExtrudeGeometry(heartShape,{
+const heartGeo=new THREE.ExtrudeGeometry(heartShape,{
   depth:50,
   bevelEnabled:true,
   bevelSegments:80,
@@ -107,29 +92,30 @@ const heartGeo = new THREE.ExtrudeGeometry(heartShape,{
 });
 heartGeo.center();
 
-const heartMat = new THREE.MeshPhysicalMaterial({
+const heartMat=new THREE.MeshPhysicalMaterial({
   color:0xffd700,
   metalness:1,
   roughness:0.05,
   clearcoat:1,
   clearcoatRoughness:0.02,
-  envMapIntensity:1.8
+  emissive:0x332200,
+  emissiveIntensity:0.7
 });
 
-const heart = new THREE.Mesh(heartGeo,heartMat);
+const heart=new THREE.Mesh(heartGeo,heartMat);
 scene.add(heart);
 
-/* Sparkle Halo */
+/* Sparkles */
 const sparkleGeo=new THREE.BufferGeometry();
-const sparkleCount=4000;
+const sparkleCount=5000;
 const sparklePos=new Float32Array(sparkleCount*3);
 
 for(let i=0;i<sparkleCount;i++){
   const angle=Math.random()*Math.PI*2;
-  const radius=220+Math.random()*100;
+  const radius=240+Math.random()*120;
   sparklePos[i*3]=Math.cos(angle)*radius;
   sparklePos[i*3+1]=Math.sin(angle)*radius;
-  sparklePos[i*3+2]=(Math.random()-0.5)*300;
+  sparklePos[i*3+2]=(Math.random()-0.5)*350;
 }
 
 sparkleGeo.setAttribute("position",new THREE.BufferAttribute(sparklePos,3));
@@ -144,20 +130,20 @@ const sparkleMat=new THREE.PointsMaterial({
 const sparkles=new THREE.Points(sparkleGeo,sparkleMat);
 scene.add(sparkles);
 
-/* Post Processing Bloom */
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
+/* Bloom Setup */
+const composer = new THREE.EffectComposer(renderer);
+composer.addPass(new THREE.RenderPass(scene, camera));
 
-const bloomPass = new UnrealBloomPass(
+const bloomPass = new THREE.UnrealBloomPass(
   new THREE.Vector2(window.innerWidth, window.innerHeight),
-  1.4,
+  1.6,
   0.4,
   0.85
 );
 composer.addPass(bloomPass);
 
 /* Animation */
-const clock = new THREE.Clock();
+const clock=new THREE.Clock();
 
 function animate(){
 requestAnimationFrame(animate);
@@ -165,22 +151,21 @@ requestAnimationFrame(animate);
 const delta=clock.getDelta();
 const t=clock.getElapsedTime();
 
-heart.rotation.y += delta*1.2;
-heart.rotation.x = Math.sin(t*0.6)*0.1;
-heart.scale.setScalar(1 + Math.sin(t*2.5)*0.1);
+heart.rotation.y+=delta*1.3;
+heart.rotation.x=Math.sin(t*0.6)*0.1;
+heart.scale.setScalar(1+Math.sin(t*2.5)*0.12);
 
-sparkles.rotation.y += delta*0.4;
-starsFar.rotation.y += delta*0.02;
-starsNear.rotation.y += delta*0.05;
+sparkles.rotation.y+=delta*0.5;
+starsFar.rotation.y+=delta*0.02;
+starsNear.rotation.y+=delta*0.05;
 
-controls.update();
 composer.render();
 }
 animate();
 
 /* Resize */
 window.addEventListener("resize",()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.aspect=window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth,window.innerHeight);
   composer.setSize(window.innerWidth,window.innerHeight);
