@@ -98,13 +98,14 @@ button.choice{
   <source src="https://cdn.pixabay.com/download/audio/2022/10/25/audio_9f3d6d3f60.mp3" type="audio/mpeg">
 </audio>
 
-<script src="./three.min.js"></script>
+<!-- Three.js CDN -->
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
 <script>
 window.addEventListener("DOMContentLoaded", () => {
 
 if(typeof THREE === "undefined"){
-  alert("three.min.js missing")
+  alert("Three.js failed to load.");
   return;
 }
 
@@ -156,7 +157,7 @@ const starMat = new THREE.PointsMaterial({
 const stars = new THREE.Points(starGeo,starMat)
 scene.add(stars)
 
-/* ===== Sparkles Orbit ===== */
+/* ===== Sparkles ===== */
 const sparkleGeo = new THREE.BufferGeometry()
 const sparkleCount = 1200
 const sparklePos = new Float32Array(sparkleCount*3)
@@ -181,7 +182,7 @@ const sparkleMat = new THREE.PointsMaterial({
 const sparkles = new THREE.Points(sparkleGeo,sparkleMat)
 scene.add(sparkles)
 
-/* ===== Heart ===== */
+/* ===== Heart Shape ===== */
 const heartShape = new THREE.Shape()
 heartShape.moveTo(0,0)
 heartShape.bezierCurveTo(0,10,-15,22,-28,8)
@@ -235,7 +236,7 @@ animate()
 const music = document.getElementById("music")
 music.volume = 0.8
 
-/* ===== UI ===== */
+/* ===== UI Logic ===== */
 const enterBtn = document.getElementById("enterBtn")
 
 enterBtn.addEventListener("click",()=>{
